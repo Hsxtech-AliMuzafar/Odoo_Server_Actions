@@ -30,6 +30,11 @@ This repository contains Python scripts for Odoo server actions that help mainta
 3. **Combined Cleanup (Archived + Duplicates)**  
    - Performs both actions in a single run for maximum efficiency.  
 
+4. **Update Category Accounts (Income/Expense)**
+   - Bulk updates `Income` and `Expense` accounts on Product Categories.
+   - Uses a "Source" category from your selection as a template.
+   - Processes in **incremental batches** of 1000 to handle large datasets safely.  
+
 ## **Implementation**  
 
 - **Via Odoo Studio**:  
@@ -61,6 +66,7 @@ This repository contains Python scripts for Odoo server actions that help mainta
 └── combined_cleanup_action.py
 └── Odoo_remove_zero_qty_products.py
 └── Odoo_Reset_to_draft_Journal entries.py
+└── Odoo_update_income_expense_accounts.py
 ```  
 
 ### **License**  
