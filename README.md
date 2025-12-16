@@ -40,6 +40,14 @@ This repository contains Python scripts for Odoo server actions that help mainta
    - Filters selection to ensure only draft bills/refunds are processed.
    - Returns a success notification with the count of cancelled bills.
 
+6. **Reset to Draft (Payments)**
+   - Resets selected `account.payment` records to `draft` state.
+   - Processes in batches for safety.
+
+7. **Cancel Payments**
+   - Cancels selected `account.payment` records.
+   - Provides detailed feedback on success/failure counts.
+
 ## **Implementation**  
 
 - **Via Odoo Studio**:  
@@ -72,7 +80,9 @@ This repository contains Python scripts for Odoo server actions that help mainta
 ├── Odoo_remove_zero_qty_products.py
 ├── Odoo_Reset_to_draft_Journal entries.py
 ├── Odoo_update_income_expense_accounts.py
-└── Odoo_Cancel_Draft_Vendor_Bills.py
+├── Odoo_Cancel_Draft_Vendor_Bills.py
+├── Odoo_Reset_to_draft_Payments.py
+└── Odoo_Cancel_Payments.py
 ```  
 
 ### **License**  
