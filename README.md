@@ -35,6 +35,11 @@ This repository contains Python scripts for Odoo server actions that help mainta
    - Uses a "Source" category from your selection as a template.
    - Processes in **incremental batches** of 1000 to handle large datasets safely.  
 
+5. **Cancel Draft Vendor Bills**
+   - Bulk cancels selected Vendor Bills that are in the `draft` state.
+   - Filters selection to ensure only draft bills/refunds are processed.
+   - Returns a success notification with the count of cancelled bills.
+
 ## **Implementation**  
 
 - **Via Odoo Studio**:  
@@ -63,10 +68,11 @@ This repository contains Python scripts for Odoo server actions that help mainta
 ├── README.md  
 ├── remove_archived_products.py  
 ├── remove_duplicate_products.py  
-└── combined_cleanup_action.py
-└── Odoo_remove_zero_qty_products.py
-└── Odoo_Reset_to_draft_Journal entries.py
-└── Odoo_update_income_expense_accounts.py
+├── combined_cleanup_action.py
+├── Odoo_remove_zero_qty_products.py
+├── Odoo_Reset_to_draft_Journal entries.py
+├── Odoo_update_income_expense_accounts.py
+└── Odoo_Cancel_Draft_Vendor_Bills.py
 ```  
 
 ### **License**  
