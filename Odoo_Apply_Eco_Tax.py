@@ -9,53 +9,62 @@
 # To return an action, assign: action = {...}
 
 # Configuration
-tax_name = 'Eco Taxe 1 €'
+# The substring to search for in tax names
+tax_search_string = 'FR Eco Taxe'
 
-# Find the tax
-taxes = env['account.tax'].search([('name', '=', tax_name)])
+# Find the taxes
+# We use 'ilike' for case-insensitive matching logic, though standard Odoo distinct search is usually case sensitive depending on db stats.
+# 'ilike' in Odoo domain usually maps to ILIKE in Postgres which is case insensitive.
+taxes = env['account.tax'].search([('name', 'ilike', tax_search_string)])
 
-if len(taxes) == 1:
-    eco_tax = taxes[0]
+if len(taxes) > 0:
+    # We found one or more taxes matching the criteria.
+    # We will add ALL of them to the selected products.
     
-    # OPTIMIZATION:
-    # 1. Use 'records' (selected products) instead of searching all.
-    # 2. Filter out products that already have this tax.
-    
-    # 'records' is the global variable containing selected records
+    # 'records' is the global variable containing selected records (products)
     products_to_process = records
     
-    # Filter: Only keep products that DON'T have the tax yet
-    # This avoids unnecessary writes and "modified" dates changing
-    products_to_update = products_to_process.filtered(lambda p: eco_tax.id not in p.taxes_id.ids)
+    # We want to avoid adding a tax if it's already there.
+    # Since we might have multiple taxes to add, we can't do a simple "if not in" filter for a single tax.
+    # Instead, we'll iterate or use a more complex write.
+    # Simplest safe approach for server actions (considering performance vs complexity):
+    # Iterate products and add missing taxes.
     
-    total_products = len(products_to_update)
+    count_updated = 0
     
-    if total_products > 0:
-        # Write directly. For selected records (usually <1000), direct write is fine.
-        # If massive selection is expected, we could batch, but standard actions usually handle selection well.
-        products_to_update.write({'taxes_id': [(4, eco_tax.id)]})
+    # Prepare the list of tax IDs to add
+    tax_ids_to_add = taxes.ids
+    
+    for product in products_to_process:
+        # Get current tax IDs on the product
+        current_tax_ids = product.taxes_id.ids
         
-        processed_count = total_products
-    else:
-        processed_count = 0
-        log("No selected products needed update (all already had the tax).", level='info')
-
+        # Determine which of the found taxes are NOT yet required on this product
+        new_tax_ids = [t_id for t_id in tax_ids_to_add if t_id not in current_tax_ids]
+        
+        if new_tax_ids:
+            # Add the missing taxes
+            # (4, id) adds a relationship to the record with id
+            write_vals = [(4, t_id) for t_id in new_tax_ids]
+            product.write({'taxes_id': write_vals})
+            count_updated += 1
+            
     # Adding notification to the user
-    msg = f"Success: Added '{tax_name}' to {processed_count} products."
+    msg = f"Success: Found {len(taxes)} taxes matching '{tax_search_string}'. Updated {count_updated} products."
     log(msg, level='info')
     
     action = {
         'type': 'ir.actions.client',
         'tag': 'display_notification',
         'params': {
-            'title': 'Tax Update Complete',
+            'title': 'Eco Tax Update Complete',
             'message': msg,
             'type': 'success',
-            'sticky': False,  # Set to True if you want it to stay until closed
+            'sticky': False,
         }
     }
 
-elif len(taxes) == 0:
-    raise UserError(f"Tax '{tax_name}' not found. Please check the tax name.")
 else:
-    raise UserError(f"Found {len(taxes)} taxes with the name '{tax_name}'. Please rename one to be unique or use an ID.")
+    # No tax found
+    msg = f"No tax found containing '{tax_search_string}'."
+    raise UserError(msg)
