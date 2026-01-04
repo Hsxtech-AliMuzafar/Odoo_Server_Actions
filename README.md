@@ -55,6 +55,12 @@ This repository contains Python scripts for Odoo server actions that help mainta
    - Silent logging to Chatter for audit trails.
    - **Trigger**: On Creation/Update or scheduled.
 
+9. **Inter-Company POS Invoice**
+   - **Target**: POS Orders (`pos.order`).
+   - **Action**: When a POS Order is invoiced, it creates a corresponding *Customer Invoice* in **Company ID 12**.
+   - **Customer**: The invoice is billed to the **Source Company** (the one that made the POS Order).
+   - **Use Case**: Re-billing or centralized accounting.
+
 ## **Implementation**  
 
 - **Via Odoo Studio**:  
@@ -91,6 +97,7 @@ This repository contains Python scripts for Odoo server actions that help mainta
 ├── Odoo_Reset_to_draft_Payments.py
 ├── Odoo_Cancel_Payments.py
 ├── Odoo_Sync_POS_Category.py
+├── Odoo_InterCompany_POS_Invoice.py
 ```  
 
 ### **License**  
