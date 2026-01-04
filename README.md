@@ -59,6 +59,8 @@ This repository contains Python scripts for Odoo server actions that help mainta
    - **Target**: POS Orders (`pos.order`).
    - **Action**: When a POS Order is invoiced, it creates a corresponding *Customer Invoice* in **Company ID 12**.
    - **Customer**: The invoice is billed to the **Source Company** (the one that made the POS Order).
+   - **Price Logic**: Items of type 'Storable Product' (Goods) are billed at **50% price**. Services retain full price.
+   - **Notifications**: Provides real-time Client and Chatter feedback on success/failure.
    - **Use Case**: Re-billing or centralized accounting.
 
 ## **Implementation**  
