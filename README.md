@@ -48,6 +48,13 @@ This repository contains Python scripts for Odoo server actions that help mainta
    - Cancels selected `account.payment` records.
    - Provides detailed feedback on success/failure counts.
 
+8. **Sync POS Category**
+   - Automatically finds a `pos.category` with the exact same name as the Product's `categ_id`.
+   - Adds it to the Product's `pos_categ_ids`.
+   - Robust context handling (works via Automation, "Run" button, or Action menu).
+   - Silent logging to Chatter for audit trails.
+   - **Trigger**: On Creation/Update or scheduled.
+
 ## **Implementation**  
 
 - **Via Odoo Studio**:  
@@ -82,7 +89,8 @@ This repository contains Python scripts for Odoo server actions that help mainta
 ├── Odoo_update_income_expense_accounts.py
 ├── Odoo_Cancel_Draft_Vendor_Bills.py
 ├── Odoo_Reset_to_draft_Payments.py
-└── Odoo_Cancel_Payments.py
+├── Odoo_Cancel_Payments.py
+├── Odoo_Sync_POS_Category.py
 ```  
 
 ### **License**  
