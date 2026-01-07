@@ -49,6 +49,10 @@ for order in to_process:
         stats['skipped'] += 1
         continue
     
+    if order.amount_total < 0:
+        stats['skipped'] += 1
+        continue
+    
     if order.company_id.id == TARGET_COMPANY_ID:
         stats['skipped'] += 1
         continue
@@ -75,6 +79,11 @@ for order in to_process:
         for line in order.lines:
             product = line.product_id
             qty = line.qty
+            line_name = line.full_product_name or product.name or ''
+
+            # --- Product Filtering Logic ---
+            if "frais de service" in line_name.lower():
+                continue
             
             # --- Price Halving Logic ---
             # Compatibility: Odoo 15+ use 'detailed_type', older versions use 'type'
@@ -92,18 +101,23 @@ for order in to_process:
                 'product_id': product.id,
                 'quantity': qty,
                 'price_unit': price_unit,
-                'name': line.full_product_name or product.name,
+                'name': line_name,
                 'tax_ids': [(6, 0, taxes.ids)],
             }
             invoice_lines.append((0, 0, line_vals))
 
-        # 4. Create Invoice in Target Company
+        # 4. Refined Invoice Creation: Skip if no lines remain
+        if not invoice_lines:
+            stats['skipped'] += 1
+            continue
+
+        # 5. Create Invoice in Target Company
         move_vals = {
             'move_type': 'out_invoice', 
             'partner_id': customer_partner.id,
             'company_id': TARGET_COMPANY_ID,
             'invoice_line_ids': invoice_lines,
-            'ref': f"Re-bill POS Order: {order.name}",
+            'ref': f"RBLPOS: {order.name}",
             'date': order.date_order.date(),
             'journal_id': env['account.journal'].with_company(target_company).search([('type', '=', 'sale'), ('company_id', '=', TARGET_COMPANY_ID)], limit=1).id
         }
@@ -122,22 +136,10 @@ for order in to_process:
         stats['errors'] += 1
 
 # --- Final Summary Notification ---
-# Only show if something actually happened or if manually run
 if len(to_process) > 0:
-    company_list = ", ".join(stats['companies'])
-    if not company_list:
-        company_list = "None"
-
-    title = "Inter-Company Batch Complete"
-    msg = (f"Result:\n"
-           f"- Invoices Created: {stats['created']}\n"
-           f"- Skipped: {stats['skipped']}\n"
-           f"- Errors: {stats['errors']}\n"
-           f"- Source Companies: {company_list}")
-    
+    title = "Inter-Company POS Invoices"
+    msg = f"Successfully created {stats['created']} invoices. (Processed: {len(to_process)}, Errors: {stats['errors']})"
     msg_type = 'warning' if stats['errors'] > 0 else 'success'
     
     send_notification(env, env.user, title, msg, msg_type, sticky=False)
-
-    # Return action for manual runs
     action = {'type': 'ir.actions.client', 'tag': 'display_notification', 'params': {'title': title, 'message': msg, 'type': msg_type, 'sticky': False}}
