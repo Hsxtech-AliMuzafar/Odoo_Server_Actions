@@ -63,6 +63,12 @@ This repository contains Python scripts for Odoo server actions that help mainta
    - **Notifications**: Provides real-time Client and Chatter feedback on success/failure.
    - **Use Case**: Re-billing or centralized accounting.
 
+10. **Remove Duplicate Empty Product Categories**
+    - **Model**: `product.category`.
+    - **Action**: Identifies categories with the same name and same parent.
+    - **Logic**: Removes empty duplicates (no products, no subcategories) while preserving any category that has active products or structure. Ensures at least one remains if all are empty.
+    - **Safety**: Robust checks for child categories and product counts before deletion.
+
 ## **Implementation**  
 
 - **Via Odoo Studio**:  
@@ -100,6 +106,7 @@ This repository contains Python scripts for Odoo server actions that help mainta
 ├── Odoo_Cancel_Payments.py
 ├── Odoo_Sync_POS_Category.py
 ├── Odoo_InterCompany_POS_Invoice.py
+├── Odoo_remove_duplicate_empty_categories.py
 ```  
 
 ### **License**  
