@@ -63,11 +63,28 @@ This repository contains Python scripts for Odoo server actions that help mainta
    - **Notifications**: Provides real-time Client and Chatter feedback on success/failure.
    - **Use Case**: Re-billing or centralized accounting.
 
-10. **Remove Duplicate Empty Product Categories**
+10. **Remove Empty Product Categories**
     - **Model**: `product.category`.
-    - **Action**: Identifies categories with the same name and same parent.
-    - **Logic**: Removes empty duplicates (no products, no subcategories) while preserving any category that has active products or structure. Ensures at least one remains if all are empty.
-    - **Safety**: Robust checks for child categories and product counts before deletion.
+    - **Action**: Identifies and removes ALL categories that do not have any products associated with them (including their subcategories).
+    - **Safety**: Uses hierarchical checks to ensure only truly empty branches are removed.
+
+10. **Remove Empty Product Categories**
+    - **Model**: `product.category`.
+    - **Action**: Identifies and removes ALL categories that do not have any products associated with them (including their subcategories).
+    - **Safety**: Uses hierarchical checks to ensure only truly empty branches are removed.
+
+11. **Halve Product Sales Price**
+    - **Model**: `product.template` or `product.product`.
+    - **Action**: Bulk reduces the `list_price` (Sales Price) of selected products by 50%. Optimized for large datasets with batch processing.
+    - **Notifications**: Provides a success notification with the update count.
+
+12. **Auto Reconcile Bills with Payments**
+    - **Model**: `account.move` (Journal Entry / Bills)
+    - **Action**: Automatically reconciles selected open Vendor Bills with outstanding payments (credits) for the same partner.
+    - **Matching Logic**:
+        1. **Exact Match**: Matches if Amount is same AND Payment Memo/Ref matches Bill Ref/Name.
+        2. **Amount Match**: Matches if Amount is same (secondary priority).
+    - **Usage**: Select Bills in List View -> Actions -> Auto Reconcile.
 
 ## **Implementation**  
 
@@ -97,6 +114,7 @@ This repository contains Python scripts for Odoo server actions that help mainta
 ├── README.md  
 ├── remove_archived_products.py  
 ├── remove_duplicate_products.py  
+├── Odoo_auto_reconcile_bills_payments.py
 ├── combined_cleanup_action.py
 ├── Odoo_remove_zero_qty_products.py
 ├── Odoo_Reset_to_draft_Journal entries.py
@@ -107,6 +125,7 @@ This repository contains Python scripts for Odoo server actions that help mainta
 ├── Odoo_Sync_POS_Category.py
 ├── Odoo_InterCompany_POS_Invoice.py
 ├── Odoo_remove_duplicate_empty_categories.py
+├── Odoo_Halve_Product_Price.py
 ```  
 
 ### **License**  

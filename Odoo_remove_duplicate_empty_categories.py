@@ -1,76 +1,83 @@
-# Odoo Server Action: Remove Duplicate Empty Product Categories
+# Odoo Server Action: Remove Empty Product Categories
 # Model: Product Category (product.category)
 # Powered by Hsx TECH - Ali Muzafar
 
-# This script removes duplicate categories (same name and parent)
-# ONLY if they have no products and no subcategories.
+# This script removes ALL categories that have no products
+# and no subcategories with products.
 
 Category = env['product.category']
 Product = env['product.template']
 
-# Get relevant categories (from selection or all)
-target_categories = records if records else Category.search([])
+# 1. Identify "Needed" Categories (those with products or variants)
+log("Gathering used categories...", level='info')
+all_used_cat_ids = set()
 
-# Group all categories by (name, parent_id) to find duplicates globally
-# even if only some were selected, we need to know the context.
-all_cats = Category.search([])
-groups = {}
-for cat in all_cats:
-    key = (cat.name, cat.parent_id.id if cat.parent_id else False)
-    if key not in groups:
-        groups[key] = []
-    groups[key].append(cat)
+# Get directly used categories from product.template
+# Using SQL for speed on large datasets
+env.cr.execute("SELECT DISTINCT categ_id FROM product_template WHERE categ_id IS NOT NULL")
+all_used_cat_ids.update(r[0] for r in env.cr.fetchall())
+
+# Expand to all parents recursively to keep the hierarchy intact
+log("Calculating hierarchy protection...", level='info')
+to_check = list(all_used_cat_ids)
+needed_ids = set(to_check)
+while to_check:
+    # Process in batches to avoid OOM or expression depth issues
+    current_batch = to_check[:1000]
+    to_check = to_check[1000:]
+    parents = env['product.category'].browse(current_batch).mapped('parent_id').ids
+    new_parents = [p for p in parents if p and p not in needed_ids]
+    needed_ids.update(new_parents)
+    to_check.extend(new_parents)
+
+# 2. Identify categories to delete
+to_delete_ids = env['product.category'].search([('id', 'not in', list(needed_ids))]).ids
+total_to_delete = len(to_delete_ids)
+log(f"Found {total_to_delete} empty categories to remove.", level='info')
 
 removed_count = 0
-log("Starting Duplicate Category Cleanup...", level='info')
+error_count = 0
 
-for key, cats in groups.items():
-    if len(cats) <= 1:
-        continue
-    
-    # Identify which categories in this group are "Busy"
-    busy_cats = []
-    empty_cats = []
-    
-    for cat in cats:
-        # 1. Check for products
-        has_products = Product.search_count([('categ_id', '=', cat.id)]) > 0
-        # 2. Check for subcategories
-        has_children = Category.search_count([('parent_id', '=', cat.id)]) > 0
-        
-        if has_products or has_children:
-            busy_cats.append(cat)
-        else:
-            empty_cats.append(cat)
+# 3. Safe Deletion inside Savepoints
+# Sort descending by ID to handle children before parents
+to_delete_ids.sort(reverse=True)
+
+BATCH_SIZE = 500
+for i in range(0, total_to_delete, BATCH_SIZE):
+    batch_ids = to_delete_ids[i:i + BATCH_SIZE]
+    for cat_id in batch_ids:
+        cat = env['product.category'].browse(cat_id)
+        if not cat.exists():
+            continue
             
-    # Keep ALL busy categories (user wants to leave categories with products/structure)
-    # If there are NO busy categories, we MUST keep at least one empty one
-    if not busy_cats and empty_cats:
-        # Sort by ID to keep the oldest one consistently
-        empty_cats.sort(key=lambda x: x.id)
-        kept_empty = empty_cats.pop(0)
-        # log(f"Keeping oldest empty category: {kept_empty.display_name} (ID: {kept_empty.id})")
-        
-    # Remove the remaining empty duplicates
-    for cat in empty_cats:
+        # Avoid 'with' as it's often restricted (forbidden opcodes)
+        # Use manual savepoints via SQL to protect the transaction
         try:
-            # Final safety check: ensure the category is still in target_categories 
-            # if the user only wanted to clean specific ones? 
-            # Actually, usually a cleanup is global.
-            cat_name = cat.display_name
+            env.cr.execute('SAVEPOINT cleanup_sp')
             cat.unlink()
+            env.cr.execute('RELEASE SAVEPOINT cleanup_sp')
             removed_count += 1
-            # log(f"Removed duplicate empty category: {cat_name} (ID: {cat.id})")
-        except Exception as e:
-            log(f"Could not remove category {cat.id}: {str(e)}", level='error')
+        except Exception:
+            # If unlink fails, rollback to savepoint to keep transaction alive
+            env.cr.execute('ROLLBACK TO SAVEPOINT cleanup_sp')
+            error_count += 1
+            continue
+            
+    # Regular commit to save progress and release locks
+    env.cr.commit()
+    log(f"Cleaned {i + len(batch_ids)}/{total_to_delete}...", level='info')
+
+# Final Notification
+msg = f"Success: Removed {removed_count} empty categories. ({error_count} skipped due to system constraints)."
+log(msg, level='info')
 
 # Prepare return notification
 action = {
     'type': 'ir.actions.client',
     'tag': 'display_notification',
     'params': {
-        'title': 'Duplicate Cleanup Complete',
-        'message': f'Removed {removed_count} redundant empty categories.',
+        'title': 'Empty Category Cleanup Complete',
+        'message': f'Removed {removed_count} categories that had no products.',
         'type': 'success',
         'sticky': False,
     }
