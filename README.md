@@ -68,11 +68,6 @@ This repository contains Python scripts for Odoo server actions that help mainta
     - **Action**: Identifies and removes ALL categories that do not have any products associated with them (including their subcategories).
     - **Safety**: Uses hierarchical checks to ensure only truly empty branches are removed.
 
-10. **Remove Empty Product Categories**
-    - **Model**: `product.category`.
-    - **Action**: Identifies and removes ALL categories that do not have any products associated with them (including their subcategories).
-    - **Safety**: Uses hierarchical checks to ensure only truly empty branches are removed.
-
 11. **Halve Product Sales Price**
     - **Model**: `product.template` or `product.product`.
     - **Action**: Bulk reduces the `list_price` (Sales Price) of selected products by 50%. Optimized for large datasets with batch processing.
@@ -85,6 +80,17 @@ This repository contains Python scripts for Odoo server actions that help mainta
         1. **Exact Match**: Matches if Amount is same AND Payment Memo/Ref matches Bill Ref/Name.
         2. **Amount Match**: Matches if Amount is same (secondary priority).
     - **Usage**: Select Bills in List View -> Actions -> Auto Reconcile.
+
+13. **Archive and Reset Product Category**
+    - **Model**: `product.template` or `product.product`.
+    - **Action**: A combined batch-safe action that archives selected products AND resets their category to ID 1.
+    - **Notifications**: Provides a success notification upon completion.
+
+14. **Add Specific Taxes to Invoices**
+    - **Model**: `account.move` (Invoices)
+    - **Action**: Iterates over invoice lines and adds tax ID 302 for products with ID 3 or 7.
+    - **Safety**: Ensures the tax is only added if not already present on the line.
+    - **Notifications**: Reports the number of lines and invoices updated.
 
 ## **Implementation**  
 
@@ -126,6 +132,8 @@ This repository contains Python scripts for Odoo server actions that help mainta
 ├── Odoo_InterCompany_POS_Invoice.py
 ├── Odoo_remove_duplicate_empty_categories.py
 ├── Odoo_Halve_Product_Price.py
+├── Odoo_archive_and_reset_category.py
+├── Odoo_Add_Taxes_to_Invoices.py
 ```  
 
 ### **License**  
