@@ -86,11 +86,22 @@ This repository contains Python scripts for Odoo server actions that help mainta
     - **Action**: A combined batch-safe action that archives selected products AND resets their category to ID 1.
     - **Notifications**: Provides a success notification upon completion.
 
-14. **Add Specific Taxes to Invoices**
+14. **Batch Add Taxes to All Invoice Lines**
     - **Model**: `account.move` (Invoices)
-    - **Action**: Iterates over invoice lines and adds tax ID 302 for products with ID 3 or 7.
+    - **Action**: Iterates over invoice lines and adds tax ID 315 to all lines in batches.
+    - **Notifications**: Provides real-time progress notifications via Odoo's Bus system for each batch processed.
     - **Safety**: Ensures the tax is only added if not already present on the line.
-    - **Notifications**: Reports the number of lines and invoices updated.
+
+15. **Batch Reset Journal Entries to Draft**
+    - **Model**: `account.move` (Journal Entries)
+    - **Action**: Resets selected Journal Entries to `draft` state in batches.
+    - **Notifications**: Provides real-time progress notifications via Odoo's Bus system for each batch processed.
+    - **Logic**: Only processes explicitly selected IDs, ensuring no accidental bulk resets beyond selection.
+
+16. **Batch Remove Taxes from All Invoice Lines**
+    - **Model**: `account.move` (Invoices)
+    - **Action**: Clears all taxes from all lines of selected invoices in batches.
+    - **Notifications**: Provides real-time progress notifications via Odoo's Bus system for each batch processed.
 
 ## **Implementation**  
 
@@ -134,6 +145,8 @@ This repository contains Python scripts for Odoo server actions that help mainta
 ├── Odoo_Halve_Product_Price.py
 ├── Odoo_archive_and_reset_category.py
 ├── Odoo_Add_Taxes_to_Invoices.py
+├── Odoo_Batch_Reset_Journal_Entries.py
+├── Odoo_Remove_Taxes_from_Invoices.py
 ```  
 
 ### **License**  

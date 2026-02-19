@@ -1,14 +1,13 @@
-# Odoo Server Action: Batch Add Taxes to All Invoice Lines
+# Odoo Server Action: Batch Remove Taxes from All Invoice Lines
 # Model: Journal Entry (account.move)
 # Action To Do: Execute Python Code
 #
 # Usage:
 # Select Invoices in the list view (Accounting > Invoices)
 # and run this action from the Action menu.
-# It processes the specific invoices you have selected in batches.
+# It clears all taxes from the selected invoices in batches.
 
 # Configuration
-TAX_ID = 315
 BATCH_SIZE = 100
 
 # Get selected IDs
@@ -17,16 +16,11 @@ all_eligible_ids = records.ids
 if not all_eligible_ids:
     raise UserError("Please select at least one Invoice to update.")
 
-# Find the tax record to ensure it exists
-tax = env['account.tax'].browse(TAX_ID)
-if not tax.exists():
-    raise UserError(f"Tax with ID {TAX_ID} not found.")
-
 total_count = len(all_eligible_ids)
 success_count = 0
-updated_lines_count = 0
+removed_lines_count = 0
 
-log(f"Starting batch tax update for {total_count} selected invoices...", level='info')
+log(f"Starting batch tax removal for {total_count} selected invoices...", level='info')
 
 # Process in chunks
 for i in range(0, total_count, BATCH_SIZE):
@@ -37,16 +31,14 @@ for i in range(0, total_count, BATCH_SIZE):
     
     batch_updated_invoices = 0
     for invoice in invoice_batch:
-        # Filter lines that don't already have the tax
-        lines_to_update = invoice.invoice_line_ids.filtered(
-            lambda l: TAX_ID not in l.tax_ids.ids
-        )
+        # Get lines that have any taxes
+        lines_with_taxes = invoice.invoice_line_ids.filtered(lambda l: l.tax_ids)
         
-        if lines_to_update:
-            # Add the tax to the lines
-            for line in lines_to_update:
-                line.write({'tax_ids': [(4, TAX_ID)]})
-                updated_lines_count += 1
+        if lines_with_taxes:
+            # Clear all taxes from the lines
+            for line in lines_with_taxes:
+                line.write({'tax_ids': [(5, 0, 0)]})
+                removed_lines_count += 1
             batch_updated_invoices += 1
     
     success_count += batch_updated_invoices
@@ -58,20 +50,20 @@ for i in range(0, total_count, BATCH_SIZE):
     progress = min(i + BATCH_SIZE, total_count)
     env['bus.bus']._sendone(env.user.partner_id, 'simple_notification', {
         'title': 'Batch Processing',
-        'message': f'Tax Update Progress: {progress}/{total_count} invoices...',
-        'type': 'info',
+        'message': f'Tax Removal Progress: {progress}/{total_count} invoices...',
+        'type': 'warning',
         'sticky': False
     })
 
 # Final summary notification
 message = f"✅ {success_count} invoices updated"
-message += f"\n💎 {updated_lines_count} lines modified"
+message += f"\n🗑 {removed_lines_count} lines cleared of taxes"
 
 action = {
     'type': 'ir.actions.client',
     'tag': 'display_notification',
     'params': {
-        'title': 'Batch Tax Update Complete',
+        'title': 'Batch Tax Removal Complete',
         'message': f"Processed {total_count} selected invoices.\n{message}",
         'type': 'success',
         'sticky': True
