@@ -103,6 +103,16 @@ This repository contains Python scripts for Odoo server actions that help mainta
     - **Action**: Clears all taxes from all lines of selected invoices in batches.
     - **Notifications**: Provides real-time progress notifications via Odoo's Bus system for each batch processed.
 
+17. **Batch Confirm Journal Entries**
+    - **Model**: `account.move` (Journal Entries)
+    - **Action**: Confirms (posts) selected draft Journal Entries in batches.
+    - **Notifications**: Provides real-time progress notifications via Odoo's Bus system for each batch processed.
+
+18. **Batch Remove Invoice Attachments**
+    - **Model**: `account.move` (Invoices)
+    - **Action**: Removes all attachments linked to selected invoices in batches.
+    - **Notifications**: Provides real-time progress notifications via Odoo's Bus system for each batch processed.
+
 ## **Implementation**  
 
 - **Via Odoo Studio**:  
@@ -147,6 +157,8 @@ This repository contains Python scripts for Odoo server actions that help mainta
 ├── Odoo_Add_Taxes_to_Invoices.py
 ├── Odoo_Batch_Reset_Journal_Entries.py
 ├── Odoo_Remove_Taxes_from_Invoices.py
+├── Odoo_Batch_Confirm_Journal_Entries.py
+├── Odoo_Batch_Remove_Invoice_Attachments.py
 ```  
 
 ### **License**  
