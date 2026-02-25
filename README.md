@@ -113,6 +113,12 @@ This repository contains Python scripts for Odoo server actions that help mainta
     - **Action**: Removes all attachments linked to selected invoices in batches.
     - **Notifications**: Provides real-time progress notifications via Odoo's Bus system for each batch processed.
 
+19. **Batch Update Product Weight**
+    - **Model**: `product.template` (Products)
+    - **Action**: Updates the `weight` field of selected products to `1` in batches.
+    - **Efficiency**: Only processes products where weight is not already 1, using batch writes and periodic commits to minimize DB load.
+    - **Notifications**: Provides real-time progress notifications via Odoo's Bus system for each batch processed.
+
 ## **Implementation**  
 
 - **Via Odoo Studio**:  
@@ -159,6 +165,7 @@ This repository contains Python scripts for Odoo server actions that help mainta
 ├── Odoo_Remove_Taxes_from_Invoices.py
 ├── Odoo_Batch_Confirm_Journal_Entries.py
 ├── Odoo_Batch_Remove_Invoice_Attachments.py
+├── Odoo_Batch_Update_Product_Weight.py
 ```  
 
 ### **License**  
