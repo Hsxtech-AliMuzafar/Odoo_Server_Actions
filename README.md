@@ -119,6 +119,17 @@ This repository contains Python scripts for Odoo server actions that help mainta
     - **Efficiency**: Only processes products where weight is not already 1, using batch writes and periodic commits to minimize DB load.
     - **Notifications**: Provides real-time progress notifications via Odoo's Bus system for each batch processed.
 
+20. **Update Invoice Job Fields**
+    - **Model**: `account.move` (Invoices)
+    - **Action**: Updates job-related studio fields pull data from related Sales Orders.
+    - **Fields Updated**: Job Installation Date, Unit Number, Unit Location, and Unit Name.
+    - **Efficiency**: Consolidated single-loop processing with batch support and progress notifications.
+
+21. **Batch Set Contact Country**
+    - **Model**: `res.partner` (Contacts)
+    - **Action**: Bulk sets the country (and optionally state) for selected contacts.
+    - **Features**: Skip or overwrite existing countries, state validation, and batch processing with notifications.
+
 ## **Implementation**  
 
 - **Via Odoo Studio**:  
@@ -166,6 +177,8 @@ This repository contains Python scripts for Odoo server actions that help mainta
 ├── Odoo_Batch_Confirm_Journal_Entries.py
 ├── Odoo_Batch_Remove_Invoice_Attachments.py
 ├── Odoo_Batch_Update_Product_Weight.py
+├── Odoo_Update_Invoice_Job_Fields.py
+├── Odoo_Batch_Set_Contact_Country.py
 ```  
 
 ### **License**  
