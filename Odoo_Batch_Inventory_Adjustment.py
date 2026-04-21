@@ -8,7 +8,7 @@
 # It sets the inventoried quantity to a target value (default 0) in batches.
 
 # Configuration
-TARGET_QTY = 0.0  # Set this to the desired quantity
+TARGET_QTY = 1.0  # Set this to the desired quantity
 BATCH_SIZE = 50   # Number of products to process in one transaction
 
 # Get selected IDs and Model
@@ -28,33 +28,50 @@ total_products = len(products)
 processed_count = 0
 quants_adjusted = 0
 
-log(f"Starting Batch Inventory Adjustment for {total_products} products...", level='info')
+# Find a default internal location (WH/Stock) for products with no existing stock records
+default_location = env['stock.warehouse'].search([('company_id', '=', env.company.id)], limit=1).lot_stock_id
+if not default_location:
+    default_location = env['stock.location'].search([('usage', '=', 'internal')], limit=1)
+
+if not default_location:
+    raise UserError("No Internal Location found. Please ensure a Warehouse is configured.")
 
 # Process in chunks
 for i in range(0, total_products, BATCH_SIZE):
     batch_products = products[i:i + BATCH_SIZE]
     
-    # Find active quants for these products in internal locations
-    # We only adjust 'Internal' locations to avoid affecting transit/scrap/suppliers
-    quants = env['stock.quant'].search([
+    # Use inventory_mode context mandated by Odoo 15-18 for programmatic adjustments
+    Quant = env['stock.quant'].with_context(inventory_mode=True)
+    
+    # 1. Update Existing Quants
+    existing_quants = Quant.search([
         ('product_id', 'in', batch_products.ids),
         ('location_id.usage', '=', 'internal')
     ])
     
-    if quants:
-        for quant in quants:
-            # Set the counted quantity
-            # Note: inventory_quantity is the Odoo 15-18 field for adjustment
-            quant.inventory_quantity = TARGET_QTY
+    if existing_quants:
+        existing_quants.write({'inventory_quantity': TARGET_QTY})
+        existing_quants.action_apply_inventory()
+        quants_adjusted += len(existing_quants)
+    
+    # 2. Handle Products with 0 existing stock (no quants)
+    products_with_stock = existing_quants.mapped('product_id')
+    missing_products = batch_products - products_with_stock
+    
+    if missing_products:
+        for product in missing_products:
+            new_quant = Quant.create({
+                'product_id': product.id,
+                'location_id': default_location.id,
+                'inventory_quantity': TARGET_QTY,
+            })
+            new_quant.action_apply_inventory()
             quants_adjusted += 1
-        
-        # Apply the adjustment for the batch
-        # This creates the stock.move and updates quantity on hand
-        quants.action_apply_inventory()
     
     processed_count += len(batch_products)
     
-    # Commit to save progress and release DB locks
+    # Force DB write and commit
+    env.flush_all()
     env.cr.commit()
     
     # Real-time progress notification
